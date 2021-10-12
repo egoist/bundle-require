@@ -1,8 +1,13 @@
 import fs from 'fs'
 import path from 'path'
-import { build } from 'esbuild'
+import { build, Loader } from 'esbuild'
 
 const JS_EXT_RE = /\.(mjs|cjs|ts|js|tsx|jsx)$/
+
+function inferLoader(ext: string): Loader {
+  if (ext === '.mjs' || ext === '.cjs') return 'js'
+  return ext.slice(1) as Loader
+}
 
 export interface Options {
   /**
@@ -55,6 +60,7 @@ export async function bundleRequire(options: Options) {
                 .replace(/\b__filename\b/g, args.path)
                 .replace(/\b__dirname\b/g, path.dirname(args.path))
                 .replace(/\bimport\.meta\.url\b/g, `file://${args.path}`),
+              loader: inferLoader(path.extname(args.path)),
             }
           })
         },
