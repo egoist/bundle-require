@@ -40,9 +40,7 @@ export async function bundleRequire(options: Options) {
               }
             }
             if (path.isAbsolute(args.path) || args.path.startsWith('.')) {
-              return {
-                path: args.path,
-              }
+              return
             }
             return {
               path: args.path,
