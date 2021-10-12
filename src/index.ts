@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { build, Loader } from 'esbuild'
+import { build, Loader, Plugin } from 'esbuild'
 import { getPackagesFromNodeModules } from './utils'
 
 const JS_EXT_RE = /\.(mjs|cjs|ts|js|tsx|jsx)$/
@@ -21,6 +21,10 @@ export interface Options {
    * This function can be asynchronous, i.e. returns a Promise
    */
   require?: (outfile: string) => any
+  /**
+   * esbuild plugin
+   */
+  esbuildPlugins?: Plugin[]
 }
 
 export async function bundleRequire(options: Options) {
@@ -39,6 +43,7 @@ export async function bundleRequire(options: Options) {
     platform: 'node',
     bundle: true,
     plugins: [
+      ...(options.esbuildPlugins || []),
       {
         name: 'replace-path',
         setup(ctx) {

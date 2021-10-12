@@ -46,6 +46,10 @@ interface Options {
    * This function can be asynchronous, i.e. returns a Promise
    */
   require?: (outfile: string) => any
+  /**
+   * esbuild plugin
+   */
+  esbuildPlugins?: Plugin[]
 }
 ```
 
