@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { build, Loader } from 'esbuild'
+import { getPackagesFromNodeModules } from './utils'
 
 const JS_EXT_RE = /\.(mjs|cjs|ts|js|tsx|jsx)$/
 
@@ -28,6 +29,9 @@ export async function bundleRequire(options: Options) {
   }
 
   const outfile = options.filepath.replace(JS_EXT_RE, '.bundled.cjs')
+
+  const packageNames = getPackagesFromNodeModules()
+
   await build({
     entryPoints: [options.filepath],
     outfile,
@@ -39,18 +43,14 @@ export async function bundleRequire(options: Options) {
         name: 'replace-path',
         setup(ctx) {
           ctx.onResolve({ filter: /.*/ }, (args) => {
-            if (/node_modules/.test(args.path)) {
+            const isPackage = packageNames.some((name) => {
+              return args.path === name || args.path.startsWith(`${name}/`)
+            })
+            if (isPackage) {
               return {
                 path: args.path,
                 external: true,
               }
-            }
-            if (path.isAbsolute(args.path) || args.path.startsWith('.')) {
-              return
-            }
-            return {
-              path: args.path,
-              external: true,
             }
           })
 
@@ -58,9 +58,15 @@ export async function bundleRequire(options: Options) {
             const contents = await fs.promises.readFile(args.path, 'utf-8')
             return {
               contents: contents
-                .replace(/\b__filename\b/g, args.path)
-                .replace(/\b__dirname\b/g, path.dirname(args.path))
-                .replace(/\bimport\.meta\.url\b/g, `file://${args.path}`),
+                .replace(/\b__filename\b/g, JSON.stringify(args.path))
+                .replace(
+                  /\b__dirname\b/g,
+                  JSON.stringify(path.dirname(args.path)),
+                )
+                .replace(
+                  /\bimport\.meta\.url\b/g,
+                  JSON.stringify(`file://${args.path}`),
+                ),
               loader: inferLoader(path.extname(args.path)),
             }
           })
