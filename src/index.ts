@@ -33,6 +33,7 @@ export async function bundleRequire(options: Options) {
     outfile,
     format: 'cjs',
     platform: 'node',
+    bundle: true,
     plugins: [
       {
         name: 'replace-path',
