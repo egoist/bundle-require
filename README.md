@@ -30,6 +30,25 @@ const mod = await bundleRequire({
 })
 ```
 
+## API
+
+### `bundleRequire(options: Options)`
+
+```ts
+interface Options {
+  /**
+   * The filepath to bundle and require
+   */
+  filepath: string
+  /**
+   * The `require` function that is used to load the output file
+   * Default to the global `require` function
+   * This function can be asynchronous, i.e. returns a Promise
+   */
+  require?: (outfile: string) => any
+}
+```
+
 ## License
 
 MIT &copy; [EGOIST](https://github.com/sponsors/egoist)

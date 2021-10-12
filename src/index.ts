@@ -5,7 +5,16 @@ import { build } from 'esbuild'
 const JS_EXT_RE = /\.(mjs|cjs|ts|js|tsx|jsx)$/
 
 export interface Options {
+  /**
+   * The filepath to bundle and require
+   */
   filepath: string
+  /**
+   * The `require` function that is used to load the output file
+   * Default to the global `require` function
+   * This function can be asynchronous, i.e. returns a Promise
+   */
+  require?: (outfile: string) => any
 }
 
 export async function bundleRequire(options: Options) {
@@ -27,7 +36,7 @@ export async function bundleRequire(options: Options) {
             if (/node_modules/.test(args.path)) {
               return {
                 path: args.path,
-                external: true
+                external: true,
               }
             }
             if (path.isAbsolute(args.path) || args.path.startsWith('.')) {
@@ -54,7 +63,15 @@ export async function bundleRequire(options: Options) {
       },
     ],
   })
-  const mod = require(outfile)
-  await fs.promises.unlink(outfile)
+
+  let mod: any
+  const req = options.require || require
+  try {
+    mod = await req(outfile)
+  } finally {
+    // Remove the outfile after executed
+    await fs.promises.unlink(outfile)
+  }
+
   return mod
 }
