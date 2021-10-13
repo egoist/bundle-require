@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { build, Loader, Plugin } from 'esbuild'
+import { build, Loader, Plugin, BuildOptions } from 'esbuild'
 import { getPackagesFromNodeModules } from './utils'
 
 const JS_EXT_RE = /\.(mjs|cjs|ts|js|tsx|jsx)$/
@@ -22,17 +22,30 @@ export interface Options {
    */
   require?: (outfile: string) => any
   /**
+   * esbuild options
+   */
+  esbuildOptions?: BuildOptions
+  /**
    * esbuild plugin
    */
   esbuildPlugins?: Plugin[]
+  /**
+   * Get the path to the output file
+   * By default we simply replace the extension with `.bundled.cjs`
+   */
+  getOutputFile?: (filepath: string) => string
 }
+
+const defaultGetOutputFile = (filepath: string) =>
+  filepath.replace(JS_EXT_RE, '.bundled.cjs')
 
 export async function bundleRequire(options: Options) {
   if (!JS_EXT_RE.test(options.filepath)) {
     throw new Error(`${options.filepath} is not a valid JS file`)
   }
 
-  const outfile = options.filepath.replace(JS_EXT_RE, '.bundled.cjs')
+  const getOutputFile = options.getOutputFile || defaultGetOutputFile
+  const outfile = getOutputFile(options.filepath)
 
   const packageNames = getPackagesFromNodeModules()
 
@@ -42,6 +55,7 @@ export async function bundleRequire(options: Options) {
     format: 'cjs',
     platform: 'node',
     bundle: true,
+    ...options.esbuildOptions,
     plugins: [
       ...(options.esbuildPlugins || []),
       {
