@@ -53,6 +53,10 @@ interface Options {
 }
 ```
 
+## Sponsors
+
+[![sponsors](https://sponsors-images.egoist.sh/sponsors.svg)](https://github.com/sponsors/egoist)
+
 ## License
 
 MIT &copy; [EGOIST](https://github.com/sponsors/egoist)
