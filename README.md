@@ -47,9 +47,9 @@ interface Options {
    */
   require?: (outfile: string) => any
   /**
-   * esbuild plugin
+   * esbuild options
    */
-  esbuildPlugins?: Plugin[]
+  esbuildOptions?: EsbuildOptions
 }
 
 interface Result {
