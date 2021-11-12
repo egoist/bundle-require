@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
-import { build, Loader, Plugin, BuildOptions } from 'esbuild'
-import { getPackagesFromNodeModules } from './utils'
+import { build, Loader, BuildOptions } from 'esbuild'
+import { dynamicImport, getPackagesFromNodeModules, guessFormat } from './utils'
 
 const JS_EXT_RE = /\.(mjs|cjs|ts|js|tsx|jsx)$/
 
@@ -9,6 +9,8 @@ function inferLoader(ext: string): Loader {
   if (ext === '.mjs' || ext === '.cjs') return 'js'
   return ext.slice(1) as Loader
 }
+
+export { dynamicImport }
 
 export interface Options {
   /**
@@ -26,18 +28,14 @@ export interface Options {
    */
   esbuildOptions?: BuildOptions
   /**
-   * esbuild plugin
-   */
-  esbuildPlugins?: Plugin[]
-  /**
    * Get the path to the output file
-   * By default we simply replace the extension with `.bundled.cjs`
+   * By default we simply replace the extension with `.bundled.js`
    */
   getOutputFile?: (filepath: string) => string
 }
 
 const defaultGetOutputFile = (filepath: string) =>
-  filepath.replace(JS_EXT_RE, '.bundled.cjs')
+  filepath.replace(JS_EXT_RE, '.bundled.js')
 
 export async function bundleRequire(options: Options) {
   if (!JS_EXT_RE.test(options.filepath)) {
@@ -49,15 +47,18 @@ export async function bundleRequire(options: Options) {
 
   const packageNames = getPackagesFromNodeModules()
 
-  await build({
-    entryPoints: [options.filepath],
-    outfile,
-    format: 'cjs',
-    platform: 'node',
-    bundle: true,
+  const result = await build({
     ...options.esbuildOptions,
+    entryPoints: [options.filepath],
+    outfile: 'out.js',
+    format: guessFormat(options.filepath),
+    platform: 'node',
+    sourcemap: 'inline',
+    bundle: true,
+    metafile: true,
+    write: false,
     plugins: [
-      ...(options.esbuildPlugins || []),
+      ...(options.esbuildOptions?.plugins || []),
       {
         name: 'replace-path',
         setup(ctx) {
@@ -94,8 +95,16 @@ export async function bundleRequire(options: Options) {
     ],
   })
 
+  if (!result.outputFiles) {
+    throw new Error(`[bundle-require] no output files`)
+  }
+
+  const { text } = result.outputFiles[0]
+
+  await fs.promises.writeFile(outfile, text, 'utf8')
+
   let mod: any
-  const req = options.require || require
+  const req = options.require || dynamicImport
   try {
     mod = await req(outfile)
   } finally {
@@ -103,5 +112,8 @@ export async function bundleRequire(options: Options) {
     await fs.promises.unlink(outfile)
   }
 
-  return mod
+  return {
+    mod,
+    dependencies: result.metafile ? Object.keys(result.metafile.inputs) : [],
+  }
 }
