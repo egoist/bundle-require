@@ -10,7 +10,7 @@
 
 Projects like [Vite](https://vitejs.dev) need to load config files provided by the user, but you can't do it with just `require()` because it's not necessarily a CommonJS module, it could also be a `.mjs` or even be written in TypeScript, and that's where the `bundle-require` package comes in, it loads the config file regardless what module format it is.
 
-This is implemented by pre-bundling the file with [esbuild](https://esbuild.github.io/) and then loading it with `require()`.
+This is implemented by pre-bundling the file with [esbuild](https://esbuild.github.io/) and then loading it with `import()` or `require()`.
 
 ## Install
 
@@ -25,14 +25,14 @@ npm i bundle-require esbuild
 ```ts
 import { bundleRequire } from 'bundle-require'
 
-const mod = await bundleRequire({
+const { mod } = await bundleRequire({
   filepath: './project/vite.config.ts',
 })
 ```
 
 ## API
 
-### `bundleRequire(options: Options)`
+### `bundleRequire(options: Options): Promise<Result>`
 
 ```ts
 interface Options {
@@ -50,6 +50,13 @@ interface Options {
    * esbuild plugin
    */
   esbuildPlugins?: Plugin[]
+}
+
+interface Result {
+  /** Loaded module */
+  mod: any
+  /** Files imported by the module */
+  dependencies: string[]
 }
 ```
 
