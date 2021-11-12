@@ -28,6 +28,6 @@
     "esbuild": "^0.13.13"
   },
   "peerDependencies": {
-    "esbuild": "^0.13.13"
+    "esbuild": ">=0.13"
   }
 }
