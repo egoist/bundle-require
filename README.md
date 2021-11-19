@@ -4,7 +4,7 @@
 
 # bundle-require
 
-[![npm version](https://badgen.net/npm/v/bundle-require)](https://npm.im/bundle-require)
+[![npm version](https://badgen.net/npm/v/bundle-require)](https://npm.im/bundle-require) [![npm downloads](https://badgen.net/npm/dm/express)](https://npm.im/bundle-require) [![jsDocs.io](https://img.shields.io/badge/jsDocs.io-reference-blue)](https://www.jsdocs.io/package/bundle-require)
 
 ## Use Case
 
@@ -32,33 +32,7 @@ const { mod } = await bundleRequire({
 
 ## API
 
-### `bundleRequire(options: Options): Promise<Result>`
-
-```ts
-interface Options {
-  /**
-   * The filepath to bundle and require
-   */
-  filepath: string
-  /**
-   * The `require` function that is used to load the output file
-   * Default to the global `require` function
-   * This function can be asynchronous, i.e. returns a Promise
-   */
-  require?: (outfile: string) => any
-  /**
-   * esbuild options
-   */
-  esbuildOptions?: EsbuildOptions
-}
-
-interface Result {
-  /** Loaded module */
-  mod: any
-  /** Files imported by the module */
-  dependencies: string[]
-}
-```
+https://www.jsdocs.io/package/bundle-require
 
 ## Sponsors
 

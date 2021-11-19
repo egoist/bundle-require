@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { build, Loader, BuildOptions } from 'esbuild'
+import { build, Loader, BuildOptions, BuildFailure, BuildResult } from 'esbuild'
 import { dynamicImport, getPackagesFromNodeModules, guessFormat } from './utils'
 
 const JS_EXT_RE = /\.(mjs|cjs|ts|js|tsx|jsx)$/
@@ -32,6 +32,14 @@ export interface Options {
    * By default we simply replace the extension with `.bundled.js`
    */
   getOutputFile?: (filepath: string) => string
+  /**
+   * Enable watching and call the callback after each rebuild
+   */
+  onRebuild?: (ctx: {
+    err?: BuildFailure
+    mod?: any
+    dependencies?: string[]
+  }) => void
 }
 
 // Use a random path to avoid import cache
@@ -48,6 +56,30 @@ export async function bundleRequire(options: Options) {
 
   const packageNames = getPackagesFromNodeModules()
 
+  const extractResult = async (result: BuildResult) => {
+    if (!result.outputFiles) {
+      throw new Error(`[bundle-require] no output files`)
+    }
+
+    const { text } = result.outputFiles[0]
+
+    await fs.promises.writeFile(outfile, text, 'utf8')
+
+    let mod: any
+    const req = options.require || dynamicImport
+    try {
+      mod = await req(outfile)
+    } finally {
+      // Remove the outfile after executed
+      await fs.promises.unlink(outfile)
+    }
+
+    return {
+      mod,
+      dependencies: result.metafile ? Object.keys(result.metafile.inputs) : [],
+    }
+  }
+
   const result = await build({
     ...options.esbuildOptions,
     entryPoints: [options.filepath],
@@ -58,6 +90,18 @@ export async function bundleRequire(options: Options) {
     bundle: true,
     metafile: true,
     write: false,
+    watch:
+      options.esbuildOptions?.watch ||
+      (options.onRebuild && {
+        async onRebuild(err, result) {
+          if (err) {
+            return options.onRebuild!({ err })
+          }
+          if (result) {
+            options.onRebuild!(await extractResult(result))
+          }
+        },
+      }),
     plugins: [
       ...(options.esbuildOptions?.plugins || []),
       {
@@ -96,25 +140,5 @@ export async function bundleRequire(options: Options) {
     ],
   })
 
-  if (!result.outputFiles) {
-    throw new Error(`[bundle-require] no output files`)
-  }
-
-  const { text } = result.outputFiles[0]
-
-  await fs.promises.writeFile(outfile, text, 'utf8')
-
-  let mod: any
-  const req = options.require || dynamicImport
-  try {
-    mod = await req(outfile)
-  } finally {
-    // Remove the outfile after executed
-    await fs.promises.unlink(outfile)
-  }
-
-  return {
-    mod,
-    dependencies: result.metafile ? Object.keys(result.metafile.inputs) : [],
-  }
+  return extractResult(result)
 }
