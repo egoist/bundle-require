@@ -4,7 +4,7 @@
 
 # bundle-require
 
-[![npm version](https://badgen.net/npm/v/bundle-require)](https://npm.im/bundle-require) [![npm downloads](https://badgen.net/npm/dm/express)](https://npm.im/bundle-require) [![jsDocs.io](https://img.shields.io/badge/jsDocs.io-reference-blue)](https://www.jsdocs.io/package/bundle-require)
+[![npm version](https://badgen.net/npm/v/bundle-require)](https://npm.im/bundle-require) [![npm downloads](https://badgen.net/npm/dm/bundle-require)](https://npm.im/bundle-require) [![jsDocs.io](https://img.shields.io/badge/jsDocs.io-reference-blue)](https://www.jsdocs.io/package/bundle-require)
 
 ## Use Case
 
