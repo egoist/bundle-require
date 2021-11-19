@@ -56,9 +56,6 @@ export async function bundleRequire(options: Options) {
     throw new Error(`${options.filepath} is not a valid JS file`)
   }
 
-  const getOutputFile = options.getOutputFile || defaultGetOutputFile
-  const outfile = getOutputFile(options.filepath)
-
   const packageNames = getPackagesFromNodeModules()
   const format = guessFormat(options.filepath)
 
@@ -68,6 +65,9 @@ export async function bundleRequire(options: Options) {
     }
 
     const { text } = result.outputFiles[0]
+
+    const getOutputFile = options.getOutputFile || defaultGetOutputFile
+    const outfile = getOutputFile(options.filepath)
 
     await fs.promises.writeFile(outfile, text, 'utf8')
 
