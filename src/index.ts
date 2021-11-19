@@ -34,8 +34,9 @@ export interface Options {
   getOutputFile?: (filepath: string) => string
 }
 
+// Use a random path to avoid import cache
 const defaultGetOutputFile = (filepath: string) =>
-  filepath.replace(JS_EXT_RE, '.bundled.js')
+  filepath.replace(JS_EXT_RE, `.bundled_${Date.now()}.js`)
 
 export async function bundleRequire(options: Options) {
   if (!JS_EXT_RE.test(options.filepath)) {
