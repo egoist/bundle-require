@@ -12,6 +12,11 @@ function inferLoader(ext: string): Loader {
 
 export { dynamicImport }
 
+export type RequireFunction = (
+  outfile: string,
+  ctx: { format: 'cjs' | 'esm' },
+) => any
+
 export interface Options {
   /**
    * The filepath to bundle and require
@@ -22,7 +27,7 @@ export interface Options {
    * Default to the global `require` function
    * This function can be asynchronous, i.e. returns a Promise
    */
-  require?: (outfile: string) => any
+  require?: RequireFunction
   /**
    * esbuild options
    */
@@ -55,6 +60,7 @@ export async function bundleRequire(options: Options) {
   const outfile = getOutputFile(options.filepath)
 
   const packageNames = getPackagesFromNodeModules()
+  const format = guessFormat(options.filepath)
 
   const extractResult = async (result: BuildResult) => {
     if (!result.outputFiles) {
@@ -66,9 +72,9 @@ export async function bundleRequire(options: Options) {
     await fs.promises.writeFile(outfile, text, 'utf8')
 
     let mod: any
-    const req = options.require || dynamicImport
+    const req: RequireFunction = options.require || dynamicImport
     try {
-      mod = await req(outfile)
+      mod = await req(outfile, { format })
     } finally {
       // Remove the outfile after executed
       await fs.promises.unlink(outfile)
@@ -84,7 +90,7 @@ export async function bundleRequire(options: Options) {
     ...options.esbuildOptions,
     entryPoints: [options.filepath],
     outfile: 'out.js',
-    format: guessFormat(options.filepath),
+    format,
     platform: 'node',
     sourcemap: 'inline',
     bundle: true,

@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import { RequireFunction } from '.'
 
 export function getPackagesFromNodeModules(dir = 'node_modules') {
   const result: string[] = []
@@ -52,6 +53,10 @@ export const usingDynamicImport = typeof jest === 'undefined'
  *
  * @param file File path to import.
  */
-export const dynamicImport = usingDynamicImport
-  ? new Function('file', 'return import(file)')
-  : require
+export const dynamicImport: RequireFunction = (id: string, { format }) => {
+  const fn =
+    usingDynamicImport && format === 'esm'
+      ? new Function('file', 'return import(file)')
+      : require
+  return fn(id)
+}
