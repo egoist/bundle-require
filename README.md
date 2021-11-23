@@ -10,7 +10,13 @@
 
 Projects like [Vite](https://vitejs.dev) need to load config files provided by the user, but you can't do it with just `require()` because it's not necessarily a CommonJS module, it could also be a `.mjs` or even be written in TypeScript, and that's where the `bundle-require` package comes in, it loads the config file regardless what module format it is.
 
-This is implemented by pre-bundling the file with [esbuild](https://esbuild.github.io/) and then loading it with `import()` or `require()`.
+## How it works
+
+- Bundle your file with esbuild, `node_modules` are excluded because it's problematic to try to bundle it
+  - `__filename`, `__dirname` and `import.meta.url` are replaced with source file's value instead of the one from the temporary output file
+- Output file in `esm` format if you have `type: 'module'` set in `package.json`, otherwise in `cjs` format
+- Load output file with `import()` or `require()` based on output format
+- Return the loaded module and its dependencies (imported files)
 
 ## Install
 
