@@ -32,10 +32,14 @@ const getPkgType = (): string | undefined => {
 }
 
 export function guessFormat(inputFile: string): 'esm' | 'cjs' {
+  if (!usingDynamicImport) return 'cjs'
+
   const ext = path.extname(inputFile)
   const type = getPkgType()
-  if (ext === '.js' || ext === '.ts') {
+  if (ext === '.js') {
     return type === 'module' ? 'esm' : 'cjs'
+  } else if (ext === '.ts') {
+    return 'esm'
   } else if (ext === '.mjs') {
     return 'esm'
   }
@@ -55,8 +59,6 @@ export const usingDynamicImport = typeof jest === 'undefined'
  */
 export const dynamicImport: RequireFunction = (id: string, { format }) => {
   const fn =
-    usingDynamicImport && format === 'esm'
-      ? new Function('file', 'return import(file)')
-      : require
+    format === 'esm' ? new Function('file', 'return import(file)') : require
   return fn(id)
 }

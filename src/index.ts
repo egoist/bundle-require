@@ -17,6 +17,8 @@ export type RequireFunction = (
   ctx: { format: 'cjs' | 'esm' },
 ) => any
 
+export type GetOutputFile = (filepath: string, format: 'esm' | 'cjs') => string
+
 export interface Options {
   /**
    * The filepath to bundle and require
@@ -36,7 +38,7 @@ export interface Options {
    * Get the path to the output file
    * By default we simply replace the extension with `.bundled.js`
    */
-  getOutputFile?: (filepath: string) => string
+  getOutputFile?: GetOutputFile
   /**
    * Enable watching and call the callback after each rebuild
    */
@@ -48,8 +50,11 @@ export interface Options {
 }
 
 // Use a random path to avoid import cache
-const defaultGetOutputFile = (filepath: string) =>
-  filepath.replace(JS_EXT_RE, `.bundled_${Date.now()}.js`)
+const defaultGetOutputFile: GetOutputFile = (filepath, format) =>
+  filepath.replace(
+    JS_EXT_RE,
+    `.bundled_${Date.now()}.${format === 'esm' ? 'mjs' : 'cjs'}`,
+  )
 
 export async function bundleRequire(options: Options) {
   if (!JS_EXT_RE.test(options.filepath)) {
@@ -67,7 +72,7 @@ export async function bundleRequire(options: Options) {
     const { text } = result.outputFiles[0]
 
     const getOutputFile = options.getOutputFile || defaultGetOutputFile
-    const outfile = getOutputFile(options.filepath)
+    const outfile = getOutputFile(options.filepath, format)
 
     await fs.promises.writeFile(outfile, text, 'utf8')
 
