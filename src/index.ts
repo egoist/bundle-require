@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import { pathToFileURL } from 'url';
 import { build, Loader, BuildOptions, BuildFailure, BuildResult } from 'esbuild'
 import { dynamicImport, getPackagesFromNodeModules, guessFormat } from './utils'
 
@@ -79,7 +80,7 @@ export async function bundleRequire(options: Options) {
     let mod: any
     const req: RequireFunction = options.require || dynamicImport
     try {
-      mod = await req(outfile, { format })
+      mod = await req(format === 'esm' ? pathToFileURL(outfile).href : outfile, { format })
     } finally {
       // Remove the outfile after executed
       await fs.promises.unlink(outfile)
