@@ -14,8 +14,8 @@ Projects like [Vite](https://vitejs.dev) need to load config files provided by t
 
 - Bundle your file with esbuild, `node_modules` are excluded because it's problematic to try to bundle it
   - `__filename`, `__dirname` and `import.meta.url` are replaced with source file's value instead of the one from the temporary output file
-- Output file in `esm` format if you have `type: 'module'` set in `package.json`, otherwise in `cjs` format. We don't bundle `node_modules` so we can't just output in `cjs` format, since `require` an esm-only package would fail.
-- Load output file with `import()` or `require()` based on output format
+- Output file in `esm` format if possible (for `.ts`, `.js` input files)
+- Load output file with `import()` if possible
 - Return the loaded module and its dependencies (imported files)
 
 ## Install
