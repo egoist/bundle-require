@@ -1,9 +1,16 @@
 import fs from 'fs'
 import path from 'path'
 import { pathToFileURL } from 'url'
-import { build, Loader, BuildOptions, BuildFailure, BuildResult } from 'esbuild'
+import {
+  build,
+  Loader,
+  BuildOptions,
+  BuildFailure,
+  BuildResult,
+  Plugin as EsbuildPlugin,
+} from 'esbuild'
 import { dynamicImport, guessFormat } from './utils'
-import { resolveModule } from './resolve'
+import { loadTsConfig } from './tsconfig'
 
 const JS_EXT_RE = /\.(mjs|cjs|ts|js|tsx|jsx)$/
 
@@ -52,7 +59,10 @@ export interface Options {
   }) => void
 
   /** External packages */
-  external?: string[]
+  external?: (string | RegExp)[]
+
+  /** A custom tsconfig path to read `paths` option */
+  tsconfig?: string
 }
 
 // Use a random path to avoid import cache
@@ -62,6 +72,84 @@ const defaultGetOutputFile: GetOutputFile = (filepath, format) =>
     `.bundled_${Date.now()}.${format === 'esm' ? 'mjs' : 'cjs'}`,
   )
 
+export { loadTsConfig }
+
+export const tsconfigPathsToRegExp = (paths: Record<string, any>) => {
+  return Object.keys(paths || {}).map((key) => {
+    return new RegExp(`^${key.replace(/\*/, '.*')}$`)
+  })
+}
+
+export const match = (id: string, patterns?: (string | RegExp)[]) => {
+  if (!patterns) return false
+  return patterns.some((p) => {
+    if (p instanceof RegExp) {
+      return p.test(id)
+    }
+    return id === p || id.startsWith(p + '/')
+  })
+}
+
+/**
+ * An esbuild plugin to mark node_modules as external
+ */
+export const externalPlugin = ({
+  external,
+  notExternal,
+}: {
+  external?: (string | RegExp)[]
+  notExternal?: (string | RegExp)[]
+} = {}): EsbuildPlugin => {
+  return {
+    name: 'bundle-require:external',
+    setup(ctx) {
+      ctx.onResolve({ filter: /.*/ }, async (args) => {
+        if (args.path[0] === '.' || path.isAbsolute(args.path)) {
+          // Fallback to default
+          return
+        }
+
+        if (match(args.path, external)) {
+          return {
+            external: true,
+          }
+        }
+
+        if (match(args.path, notExternal)) {
+          // Should be resolved by esbuild
+          return
+        }
+
+        // Most like importing from node_modules, mark external
+        return {
+          external: true,
+        }
+      })
+    },
+  }
+}
+
+export const replaceDirnamePlugin = (): EsbuildPlugin => {
+  return {
+    name: 'bundle-require:replace-path',
+    setup(ctx) {
+      ctx.onLoad({ filter: JS_EXT_RE }, async (args) => {
+        const contents = await fs.promises.readFile(args.path, 'utf-8')
+        return {
+          contents: contents
+            .replace(/\b__filename\b/g, JSON.stringify(args.path))
+            .replace(/\b__dirname\b/g, JSON.stringify(path.dirname(args.path)))
+            .replace(
+              /\bimport\.meta\.url\b/g,
+              JSON.stringify(`file://${args.path}`),
+            ),
+          loader: inferLoader(path.extname(args.path)),
+        }
+      })
+    },
+  }
+}
+
 export async function bundleRequire(options: Options) {
   if (!JS_EXT_RE.test(options.filepath)) {
     throw new Error(`${options.filepath} is not a valid JS file`)
@@ -69,13 +157,10 @@ export async function bundleRequire(options: Options) {
 
   const cwd = options.cwd || process.cwd()
   const format = guessFormat(options.filepath)
-
-  const isExternal = (id: string) => {
-    if (!options.external) return false
-    return options.external.some((external) => {
-      return id === external || id.startsWith(external + '/')
-    })
-  }
+  const tsconfig = loadTsConfig(options.cwd, options.tsconfig)
+  const resolvePaths = tsconfigPathsToRegExp(
+    tsconfig.data?.compilerOptions?.paths || {},
+  )
 
   const extractResult = async (result: BuildResult) => {
     if (!result.outputFiles) {
@@ -132,60 +217,11 @@ export async function bundleRequire(options: Options) {
       }),
     plugins: [
       ...(options.esbuildOptions?.plugins || []),
-      {
-        name: 'bundle-require',
-        setup(ctx) {
-          ctx.onResolve({ filter: /.*/ }, async (args) => {
-            if (args.path[0] === '.' || path.isAbsolute(args.path)) {
-              // Fallback to default
-              return
-            }
-
-            if (isExternal(args.path)) {
-              return {
-                external: true,
-              }
-            }
-
-            // Resolve to full path in case it's an alias path
-            const id = await resolveModule(args.path, cwd)
-            if (id) {
-              // Don't bundle node_modules
-              if (id.includes('node_modules')) {
-                return {
-                  path: args.path,
-                  external: true,
-                }
-              }
-              return {
-                path: id,
-              }
-            }
-
-            // Can't be resolve, mark external
-            return {
-              external: true,
-            }
-          })
-
-          ctx.onLoad({ filter: JS_EXT_RE }, async (args) => {
-            const contents = await fs.promises.readFile(args.path, 'utf-8')
-            return {
-              contents: contents
-                .replace(/\b__filename\b/g, JSON.stringify(args.path))
-                .replace(
-                  /\b__dirname\b/g,
-                  JSON.stringify(path.dirname(args.path)),
-                )
-                .replace(
-                  /\bimport\.meta\.url\b/g,
-                  JSON.stringify(`file://${args.path}`),
-                ),
-              loader: inferLoader(path.extname(args.path)),
-            }
-          })
-        },
-      },
+      externalPlugin({
+        external: options.external,
+        notExternal: resolvePaths,
+      }),
+      replaceDirnamePlugin(),
     ],
   })
 
