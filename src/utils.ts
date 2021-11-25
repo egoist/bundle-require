@@ -1,6 +1,17 @@
 import fs from 'fs'
 import path from 'path'
+import strip from 'strip-json-comments'
 import { RequireFunction } from '.'
+
+export function jsoncParse(data: string) {
+  try {
+    return new Function('return ' + strip(data).trim())()
+  } catch (_) {
+    // Silently ignore any error
+    // That's what tsc/jsonc-parser did after all
+    return {}
+  }
+}
 
 const getPkgType = (): string | undefined => {
   try {

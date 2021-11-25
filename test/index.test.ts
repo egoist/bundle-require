@@ -1,7 +1,7 @@
 import { test } from 'uvu'
 import assert from 'uvu/assert'
 import path from 'path'
-import { bundleRequire } from '../dist'
+import { bundleRequire, jsoncParse } from '../dist'
 
 test('main', async () => {
   const { mod, dependencies } = await bundleRequire({
@@ -27,6 +27,20 @@ test('resolve tsconfig paths', async () => {
     cwd: path.join(__dirname, './fixture/resolve-tsconfig-paths'),
   })
   assert.equal(mod.foo, 'foo')
+})
+
+test('jsonc parse', () => {
+  assert.equal(
+    jsoncParse(`
+  
+  // some comment
+  {
+    "foo": "bar" // good
+    /* another comment */
+  }
+  `),
+    { foo: 'bar' },
+  )
 })
 
 test.run()

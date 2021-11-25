@@ -9,7 +9,7 @@ import {
   BuildResult,
   Plugin as EsbuildPlugin,
 } from 'esbuild'
-import { dynamicImport, guessFormat } from './utils'
+import { dynamicImport, guessFormat, jsoncParse } from './utils'
 import { loadTsConfig } from './tsconfig'
 
 const JS_EXT_RE = /\.(mjs|cjs|ts|js|tsx|jsx)$/
@@ -19,7 +19,7 @@ function inferLoader(ext: string): Loader {
   return ext.slice(1) as Loader
 }
 
-export { dynamicImport }
+export { dynamicImport, jsoncParse }
 
 export type RequireFunction = (
   outfile: string,

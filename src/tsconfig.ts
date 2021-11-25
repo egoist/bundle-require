@@ -1,6 +1,6 @@
 import path from 'path'
 import fs from 'fs'
-import { parse } from 'jsonc-parser'
+import { jsoncParse } from './utils'
 
 // Load filename from dir, and recursively search parent dir if not found until it reaches root
 export const loadTsConfig = (
@@ -12,7 +12,7 @@ export const loadTsConfig = (
     const filepath = path.join(dir, filename)
     if (fs.existsSync(filepath)) {
       const contents = fs.readFileSync(filepath, 'utf8')
-      return { data: parse(contents), path: filepath }
+      return { data: jsoncParse(contents), path: filepath }
     }
     dir = path.dirname(dir)
   }
