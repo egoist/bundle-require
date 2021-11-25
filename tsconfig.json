@@ -9,6 +9,10 @@
     "noUnusedLocals": true,
     "noImplicitAny": true,
     "allowJs": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@foo/*": ["./node_modules/*"]
+    }
   }
 }

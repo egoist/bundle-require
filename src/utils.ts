@@ -2,26 +2,6 @@ import fs from 'fs'
 import path from 'path'
 import { RequireFunction } from '.'
 
-export function getPackagesFromNodeModules(dir = 'node_modules') {
-  const result: string[] = []
-  const names = fs.existsSync(dir) ? fs.readdirSync(dir) : []
-  for (const name of names) {
-    if (name[0] === '@') {
-      try {
-        const subnames = fs.readdirSync(path.join(dir, name))
-        for (const subname of subnames) {
-          result.push(`${name}/${subname}`)
-        }
-      } catch (error) {
-        result.push(name)
-      }
-    } else {
-      result.push(name)
-    }
-  }
-  return result
-}
-
 const getPkgType = (): string | undefined => {
   try {
     const pkg = JSON.parse(
@@ -45,6 +25,8 @@ export function guessFormat(inputFile: string): 'esm' | 'cjs' {
   }
   return 'cjs'
 }
+
+declare const jest: any
 
 // Stolen from https://github.com/vitejs/vite/blob/0713446fa4df678422c84bd141b189a930c100e7/packages/vite/src/node/utils.ts#L606
 export const usingDynamicImport = typeof jest === 'undefined'

@@ -1,8 +1,9 @@
 import fs from 'fs'
 import path from 'path'
-import { pathToFileURL } from 'url';
+import { pathToFileURL } from 'url'
 import { build, Loader, BuildOptions, BuildFailure, BuildResult } from 'esbuild'
-import { dynamicImport, getPackagesFromNodeModules, guessFormat } from './utils'
+import { dynamicImport, guessFormat } from './utils'
+import { resolveModule } from './resolve'
 
 const JS_EXT_RE = /\.(mjs|cjs|ts|js|tsx|jsx)$/
 
@@ -21,6 +22,7 @@ export type RequireFunction = (
 export type GetOutputFile = (filepath: string, format: 'esm' | 'cjs') => string
 
 export interface Options {
+  cwd?: string
   /**
    * The filepath to bundle and require
    */
@@ -48,6 +50,9 @@ export interface Options {
     mod?: any
     dependencies?: string[]
   }) => void
+
+  /** External packages */
+  external?: string[]
 }
 
 // Use a random path to avoid import cache
@@ -62,8 +67,15 @@ export async function bundleRequire(options: Options) {
     throw new Error(`${options.filepath} is not a valid JS file`)
   }
 
-  const packageNames = getPackagesFromNodeModules()
+  const cwd = options.cwd || process.cwd()
   const format = guessFormat(options.filepath)
+
+  const isExternal = (id: string) => {
+    if (!options.external) return false
+    return options.external.some((external) => {
+      return id === external || id.startsWith(external + '/')
+    })
+  }
 
   const extractResult = async (result: BuildResult) => {
     if (!result.outputFiles) {
@@ -80,7 +92,10 @@ export async function bundleRequire(options: Options) {
     let mod: any
     const req: RequireFunction = options.require || dynamicImport
     try {
-      mod = await req(format === 'esm' ? pathToFileURL(outfile).href : outfile, { format })
+      mod = await req(
+        format === 'esm' ? pathToFileURL(outfile).href : outfile,
+        { format },
+      )
     } finally {
       // Remove the outfile after executed
       await fs.promises.unlink(outfile)
@@ -95,6 +110,7 @@ export async function bundleRequire(options: Options) {
   const result = await build({
     ...options.esbuildOptions,
     entryPoints: [options.filepath],
+    absWorkingDir: cwd,
     outfile: 'out.js',
     format,
     platform: 'node',
@@ -117,17 +133,38 @@ export async function bundleRequire(options: Options) {
     plugins: [
       ...(options.esbuildOptions?.plugins || []),
       {
-        name: 'replace-path',
+        name: 'bundle-require',
         setup(ctx) {
-          ctx.onResolve({ filter: /.*/ }, (args) => {
-            const isPackage = packageNames.some((name) => {
-              return args.path === name || args.path.startsWith(`${name}/`)
-            })
-            if (isPackage) {
+          ctx.onResolve({ filter: /.*/ }, async (args) => {
+            if (args.path[0] === '.' || path.isAbsolute(args.path)) {
+              // Fallback to default
+              return
+            }
+
+            if (isExternal(args.path)) {
               return {
-                path: args.path,
                 external: true,
               }
+            }
+
+            // Resolve to full path in case it's an alias path
+            const id = await resolveModule(args.path, cwd)
+            if (id) {
+              // Don't bundle node_modules
+              if (id.includes('node_modules')) {
+                return {
+                  path: args.path,
+                  external: true,
+                }
+              }
+              return {
+                path: id,
+              }
+            }
+
+            // Can't be resolve, mark external
+            return {
+              external: true,
             }
           })
 
