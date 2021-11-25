@@ -1,7 +1,7 @@
 import { test } from 'uvu'
 import assert from 'uvu/assert'
 import path from 'path'
-import { bundleRequire } from '../src'
+import { bundleRequire } from '../dist'
 
 test('main', async () => {
   const { mod, dependencies } = await bundleRequire({
