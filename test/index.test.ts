@@ -1,7 +1,8 @@
 import { test } from 'uvu'
+import fs from 'fs'
 import assert from 'uvu/assert'
 import path from 'path'
-import { bundleRequire, jsoncParse } from '../dist'
+import { bundleRequire, jsoncParse, JS_EXT_RE } from '../dist'
 
 test('main', async () => {
   const { mod, dependencies } = await bundleRequire({
@@ -9,6 +10,18 @@ test('main', async () => {
   })
   assert.equal(mod.default.a.filename.endsWith('a.ts'), true)
   assert.equal(dependencies, ['test/fixture/a.ts', 'test/fixture/input.ts'])
+})
+
+test('preserveTemporaryFile', async () => {
+  await bundleRequire({
+    filepath: path.join(__dirname, './fixture/preserve-temporary-file/input.ts'),
+    preserveTemporaryFile: true,
+    getOutputFile: (filepath: string) =>
+      filepath.replace(JS_EXT_RE, `.bundled.mjs`),
+  })
+  const outputFile = path.join(__dirname, './fixture/preserve-temporary-file/input.bundled.mjs')
+  assert.equal(fs.existsSync(outputFile), true)
+  fs.unlinkSync(outputFile)
 })
 
 test('ignore node_modules', async () => {

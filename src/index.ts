@@ -12,7 +12,7 @@ import {
 import { dynamicImport, guessFormat, jsoncParse } from './utils'
 import { loadTsConfig } from './tsconfig'
 
-const JS_EXT_RE = /\.(mjs|cjs|ts|js|tsx|jsx)$/
+export const JS_EXT_RE = /\.(mjs|cjs|ts|js|tsx|jsx)$/
 
 function inferLoader(ext: string): Loader {
   if (ext === '.mjs' || ext === '.cjs') return 'js'
@@ -63,6 +63,12 @@ export interface Options {
 
   /** A custom tsconfig path to read `paths` option */
   tsconfig?: string
+
+  /**
+   * Preserve compiled temporary file for debugging
+   * Default to `process.env.BUNDLE_REQUIRE_PRESERVE`
+   */
+  preserveTemporaryFile?: boolean
 }
 
 // Use a random path to avoid import cache
@@ -155,6 +161,7 @@ export async function bundleRequire(options: Options) {
     throw new Error(`${options.filepath} is not a valid JS file`)
   }
 
+  const preserveTemporaryFile = options.preserveTemporaryFile ?? !!process.env.BUNDLE_REQUIRE_PRESERVE
   const cwd = options.cwd || process.cwd()
   const format = guessFormat(options.filepath)
   const tsconfig = loadTsConfig(options.cwd, options.tsconfig)
@@ -182,8 +189,10 @@ export async function bundleRequire(options: Options) {
         { format },
       )
     } finally {
-      // Remove the outfile after executed
-      await fs.promises.unlink(outfile)
+      if (!preserveTemporaryFile) {
+        // Remove the outfile after executed
+        await fs.promises.unlink(outfile)
+      }
     }
 
     return {
