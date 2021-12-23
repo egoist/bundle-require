@@ -40,6 +40,12 @@ const { mod } = await bundleRequire({
 
 https://www.jsdocs.io/package/bundle-require
 
+## Projects Using bundle-require
+
+Projects that use **bundle-require**:
+
+- [VuePress](https://github.com/vuejs/vuepress): :memo: Minimalistic Vue-powered static site generator.
+
 ## Sponsors
 
 [![sponsors](https://sponsors-images.egoist.sh/sponsors.svg)](https://github.com/sponsors/egoist)
