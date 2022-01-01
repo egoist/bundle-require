@@ -17,7 +17,7 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@egoist/prettier-config": "^0.1.0",
+    "@egoist/prettier-config": "1.0.0",
     "@types/node": "^16.11.7",
     "benny": "^3.7.1",
     "esbuild": "0.14.10",
