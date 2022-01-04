@@ -11,7 +11,7 @@ specifiers:
   sucrase: 3.20.3
   tsup: 5.11.10
   typescript: 4.5.4
-  uvu: 0.5.2
+  uvu: 0.5.3
 
 devDependencies:
   '@egoist/prettier-config': 1.0.0
@@ -24,7 +24,7 @@ devDependencies:
   sucrase: 3.20.3
   tsup: 5.11.10_typescript@4.5.4
   typescript: 4.5.4
-  uvu: 0.5.2
+  uvu: 0.5.3
 
 packages:
 
@@ -3061,11 +3061,6 @@ packages:
       is-number: 7.0.0
     dev: true
 
-  /totalist/2.0.0:
-    resolution: {integrity: sha512-+Y17F0YzxfACxTyjfhnJQEe7afPA0GSpYlFkl2VFMxYP7jshQf9gXV7cH47EfToBumFThfKBvfAcoUn6fdNeRQ==}
-    engines: {node: '>=6'}
-    dev: true
-
   /tough-cookie/4.0.0:
     resolution: {integrity: sha512-tHdtEpQCMrc1YLrMaqXXcj6AxhYi/xgit6mZu1+EDWUn+qhUf8wMQoFIy9NXuq23zAwtcB0t/MjACGR18pcRbg==}
     engines: {node: '>=6'}
@@ -3159,8 +3154,8 @@ packages:
     engines: {node: '>= 10.0.0'}
     dev: true
 
-  /uvu/0.5.2:
-    resolution: {integrity: sha512-m2hLe7I2eROhh+tm3WE5cTo/Cv3WQA7Oc9f7JB6uWv+/zVKvfAm53bMyOoGOSZeQ7Ov2Fu9pLhFr7p07bnT20w==}
+  /uvu/0.5.3:
+    resolution: {integrity: sha512-brFwqA3FXzilmtnIyJ+CxdkInkY/i4ErvP7uV0DnUVxQcQ55reuHphorpF+tZoVHK2MniZ/VJzI7zJQoc9T9Yw==}
     engines: {node: '>=8'}
     hasBin: true
     dependencies:
@@ -3168,7 +3163,6 @@ packages:
       diff: 5.0.0
       kleur: 4.1.4
       sade: 1.7.4
-      totalist: 2.0.0
     dev: true
 
   /v8-to-istanbul/8.1.0:
