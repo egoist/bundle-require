@@ -10,7 +10,7 @@ specifiers:
   strip-json-comments: 4.0.0
   sucrase: 3.20.3
   tsup: 5.11.10
-  typescript: 4.5.4
+  typescript: 4.5.5
   uvu: 0.5.2
 
 devDependencies:
@@ -22,8 +22,8 @@ devDependencies:
   prettier: 2.5.1
   strip-json-comments: 4.0.0
   sucrase: 3.20.3
-  tsup: 5.11.10_typescript@4.5.4
-  typescript: 4.5.4
+  tsup: 5.11.10_typescript@4.5.5
+  typescript: 4.5.5
   uvu: 0.5.2
 
 packages:
@@ -3091,7 +3091,7 @@ packages:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
     dev: true
 
-  /tsup/5.11.10_typescript@4.5.4:
+  /tsup/5.11.10_typescript@4.5.5:
     resolution: {integrity: sha512-z8YzbPyF8Vvj37h+TY84AfvlmKZtBTRuWwRETWUbfckMj854WeLkuRQV8vRyoY8bLJQhnKWlLge/3fVbFZGERg==}
     hasBin: true
     peerDependencies:
@@ -3114,7 +3114,7 @@ packages:
       source-map: 0.7.3
       sucrase: 3.20.3
       tree-kill: 1.2.2
-      typescript: 4.5.4
+      typescript: 4.5.5
     transitivePeerDependencies:
       - supports-color
       - ts-node
@@ -3143,8 +3143,8 @@ packages:
       is-typedarray: 1.0.0
     dev: true
 
-  /typescript/4.5.4:
-    resolution: {integrity: sha512-VgYs2A2QIRuGphtzFV7aQJduJ2gyfTljngLzjpfW9FoYZF6xuw1W0vW9ghCKLfcWrCFxK81CSGRAvS1pn4fIUg==}
+  /typescript/4.5.5:
+    resolution: {integrity: sha512-TCTIul70LyWe6IJWT8QSYeA54WQe8EjQFU4wY52Fasj5UKx88LNYKCgBEHcOMOrFF1rKGbD8v/xcNWVUq9SymA==}
     engines: {node: '>=4.2.0'}
     hasBin: true
     dev: true
