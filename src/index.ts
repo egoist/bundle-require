@@ -9,8 +9,8 @@ import {
   BuildResult,
   Plugin as EsbuildPlugin,
 } from 'esbuild'
+import { loadTsConfig } from 'load-tsconfig'
 import { dynamicImport, guessFormat, jsoncParse } from './utils'
-import { loadTsConfig } from './tsconfig'
 
 export const JS_EXT_RE = /\.(mjs|cjs|ts|js|tsx|jsx)$/
 
@@ -161,12 +161,13 @@ export async function bundleRequire(options: Options) {
     throw new Error(`${options.filepath} is not a valid JS file`)
   }
 
-  const preserveTemporaryFile = options.preserveTemporaryFile ?? !!process.env.BUNDLE_REQUIRE_PRESERVE
+  const preserveTemporaryFile =
+    options.preserveTemporaryFile ?? !!process.env.BUNDLE_REQUIRE_PRESERVE
   const cwd = options.cwd || process.cwd()
   const format = guessFormat(options.filepath)
   const tsconfig = loadTsConfig(options.cwd, options.tsconfig)
   const resolvePaths = tsconfigPathsToRegExp(
-    tsconfig.data?.compilerOptions?.paths || {},
+    tsconfig?.data.compilerOptions?.paths || {},
   )
 
   const extractResult = async (result: BuildResult) => {

@@ -11,23 +11,21 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsup src/index.ts --format cjs --dts-resolve",
-    "test": "npm run build && uvu -r sucrase/register --ignore fixture",
+    "build": "tsup src/index.ts --format cjs --dts-resolve --target node16",
+    "test": "npm run build && vitest run",
     "prepublishOnly": "npm run build"
   },
   "license": "MIT",
   "devDependencies": {
-    "@egoist/prettier-config": "1.0.0",
-    "@types/node": "16.11.17",
-    "benny": "3.7.1",
-    "esbuild": "0.14.10",
-    "jest": "27.4.5",
-    "prettier": "2.5.1",
-    "strip-json-comments": "4.0.0",
-    "sucrase": "3.20.3",
-    "tsup": "5.11.10",
-    "typescript": "4.5.4",
-    "uvu": "0.5.2"
+    "@egoist/prettier-config": "^1.0.0",
+    "@types/node": "^16.11.7",
+    "esbuild": "^0.13.13",
+    "load-tsconfig": "^0.1.2",
+    "prettier": "^2.5.1",
+    "strip-json-comments": "^4.0.0",
+    "tsup": "^5.11.11",
+    "typescript": "^4.5.5",
+    "vitest": "^0.2.3"
   },
   "peerDependencies": {
     "esbuild": ">=0.13"
