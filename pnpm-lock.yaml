@@ -4,20 +4,20 @@ specifiers:
   '@egoist/prettier-config': ^1.0.0
   '@types/node': ^16.11.7
   esbuild: ^0.13.13
-  load-tsconfig: ^0.1.2
+  load-tsconfig: ^0.2.0
   prettier: ^2.5.1
-  strip-json-comments: ^4.0.0
   tsup: ^5.11.11
   typescript: ^4.5.5
   vitest: ^0.2.3
+
+dependencies:
+  load-tsconfig: 0.2.0
 
 devDependencies:
   '@egoist/prettier-config': 1.0.0
   '@types/node': 16.11.7
   esbuild: 0.13.13
-  load-tsconfig: 0.1.2
   prettier: 2.5.1
-  strip-json-comments: 4.0.0
   tsup: 5.11.11_typescript@4.5.5
   typescript: 4.5.5
   vitest: 0.2.3
@@ -714,10 +714,12 @@ packages:
     resolution: {integrity: sha1-HADHQ7QzzQpOgHWPe2SldEDZ/wA=}
     dev: true
 
-  /load-tsconfig/0.1.2:
-    resolution: {integrity: sha512-i7HMT9NUKiFoAQu5jIgesA1uvwfp9fpsZ8fuKCUf7QoqNOgjsqxn4CjfcR+K71Pwy233Zyso6156SID4XPcBrw==}
+  /load-tsconfig/0.2.0:
+    resolution: {integrity: sha512-8w9Myeg1QSnbW6wUo0ljRzObi9D2ADtRH6jgF7cfazdFhAf+cw/y4PfnbgS6xkw3rxQ75KWoabxDdJUJnsi3pQ==}
     engines: {node: '>=14'}
-    dev: true
+    dependencies:
+      strip-json-comments: 4.0.0
+    dev: false
 
   /local-pkg/0.4.1:
     resolution: {integrity: sha512-lL87ytIGP2FU5PWwNDo0w3WhIo2gopIAxPg9RxDYF7m4rr5ahuZxP22xnJHIvaLTe4Z9P6uKKY2UHiwyB4pcrw==}
@@ -961,7 +963,6 @@ packages:
   /strip-json-comments/4.0.0:
     resolution: {integrity: sha512-LzWcbfMbAsEDTRmhjWIioe8GcDRl0fa35YMXFoJKDdiD/quGFmjJjdgPjFJJNwCMaLyQqFIDqCdHD2V4HfLgYA==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
-    dev: true
 
   /sucrase/3.20.3:
     resolution: {integrity: sha512-azqwq0/Bs6RzLAdb4dXxsCgMtAaD2hzmUr4UhSfsxO46JFPAwMnnb441B/qsudZiS6Ylea3JXZe3Q497lsgXzQ==}

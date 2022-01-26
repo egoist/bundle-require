@@ -1,6 +1,6 @@
-import fs from 'fs'
-import path from 'path'
-import { pathToFileURL } from 'url'
+import fs from "fs"
+import path from "path"
+import { pathToFileURL } from "url"
 import {
   build,
   Loader,
@@ -8,25 +8,25 @@ import {
   BuildFailure,
   BuildResult,
   Plugin as EsbuildPlugin,
-} from 'esbuild'
-import { loadTsConfig } from 'load-tsconfig'
-import { dynamicImport, guessFormat, jsoncParse } from './utils'
+} from "esbuild"
+import { loadTsConfig } from "load-tsconfig"
+import { dynamicImport, guessFormat } from "./utils"
 
 export const JS_EXT_RE = /\.(mjs|cjs|ts|js|tsx|jsx)$/
 
 function inferLoader(ext: string): Loader {
-  if (ext === '.mjs' || ext === '.cjs') return 'js'
+  if (ext === ".mjs" || ext === ".cjs") return "js"
   return ext.slice(1) as Loader
 }
 
-export { dynamicImport, jsoncParse }
+export { dynamicImport }
 
 export type RequireFunction = (
   outfile: string,
-  ctx: { format: 'cjs' | 'esm' },
+  ctx: { format: "cjs" | "esm" },
 ) => any
 
-export type GetOutputFile = (filepath: string, format: 'esm' | 'cjs') => string
+export type GetOutputFile = (filepath: string, format: "esm" | "cjs") => string
 
 export interface Options {
   cwd?: string
@@ -75,14 +75,14 @@ export interface Options {
 const defaultGetOutputFile: GetOutputFile = (filepath, format) =>
   filepath.replace(
     JS_EXT_RE,
-    `.bundled_${Date.now()}.${format === 'esm' ? 'mjs' : 'cjs'}`,
+    `.bundled_${Date.now()}.${format === "esm" ? "mjs" : "cjs"}`,
   )
 
 export { loadTsConfig }
 
 export const tsconfigPathsToRegExp = (paths: Record<string, any>) => {
   return Object.keys(paths || {}).map((key) => {
-    return new RegExp(`^${key.replace(/\*/, '.*')}$`)
+    return new RegExp(`^${key.replace(/\*/, ".*")}$`)
   })
 }
 
@@ -92,7 +92,7 @@ export const match = (id: string, patterns?: (string | RegExp)[]) => {
     if (p instanceof RegExp) {
       return p.test(id)
     }
-    return id === p || id.startsWith(p + '/')
+    return id === p || id.startsWith(p + "/")
   })
 }
 
@@ -107,10 +107,10 @@ export const externalPlugin = ({
   notExternal?: (string | RegExp)[]
 } = {}): EsbuildPlugin => {
   return {
-    name: 'bundle-require:external',
+    name: "bundle-require:external",
     setup(ctx) {
       ctx.onResolve({ filter: /.*/ }, async (args) => {
-        if (args.path[0] === '.' || path.isAbsolute(args.path)) {
+        if (args.path[0] === "." || path.isAbsolute(args.path)) {
           // Fallback to default
           return
         }
@@ -137,10 +137,10 @@ export const externalPlugin = ({
 
 export const replaceDirnamePlugin = (): EsbuildPlugin => {
   return {
-    name: 'bundle-require:replace-path',
+    name: "bundle-require:replace-path",
     setup(ctx) {
       ctx.onLoad({ filter: JS_EXT_RE }, async (args) => {
-        const contents = await fs.promises.readFile(args.path, 'utf-8')
+        const contents = await fs.promises.readFile(args.path, "utf-8")
         return {
           contents: contents
             .replace(/\b__filename\b/g, JSON.stringify(args.path))
@@ -180,13 +180,13 @@ export async function bundleRequire(options: Options) {
     const getOutputFile = options.getOutputFile || defaultGetOutputFile
     const outfile = getOutputFile(options.filepath, format)
 
-    await fs.promises.writeFile(outfile, text, 'utf8')
+    await fs.promises.writeFile(outfile, text, "utf8")
 
     let mod: any
     const req: RequireFunction = options.require || dynamicImport
     try {
       mod = await req(
-        format === 'esm' ? pathToFileURL(outfile).href : outfile,
+        format === "esm" ? pathToFileURL(outfile).href : outfile,
         { format },
       )
     } finally {
@@ -206,10 +206,10 @@ export async function bundleRequire(options: Options) {
     ...options.esbuildOptions,
     entryPoints: [options.filepath],
     absWorkingDir: cwd,
-    outfile: 'out.js',
+    outfile: "out.js",
     format,
-    platform: 'node',
-    sourcemap: 'inline',
+    platform: "node",
+    sourcemap: "inline",
     bundle: true,
     metafile: true,
     write: false,

@@ -1,7 +1,7 @@
 import { test, assert } from "vitest"
 import fs from "fs"
 import path from "path"
-import { bundleRequire, jsoncParse, JS_EXT_RE } from "../dist"
+import { bundleRequire, JS_EXT_RE } from "../dist"
 
 test("main", async () => {
   const { mod, dependencies } = await bundleRequire({
@@ -45,18 +45,4 @@ test("resolve tsconfig paths", async () => {
     cwd: path.join(__dirname, "./fixture/resolve-tsconfig-paths"),
   })
   assert.equal(mod.foo, "foo")
-})
-
-test("jsonc parse", () => {
-  assert.deepEqual(
-    jsoncParse(`
-  
-  // some comment
-  {
-    "foo": "bar" // good
-    /* another comment */
-  }
-  `),
-    { foo: "bar" },
-  )
 })

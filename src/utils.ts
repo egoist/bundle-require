@@ -1,46 +1,36 @@
-import fs from 'fs'
-import path from 'path'
-import strip from 'strip-json-comments'
-import { RequireFunction } from '.'
-
-export function jsoncParse(data: string) {
-  try {
-    return new Function('return ' + strip(data).trim())()
-  } catch (_) {
-    // Silently ignore any error
-    // That's what tsc/jsonc-parser did after all
-    return {}
-  }
-}
+import fs from "fs"
+import path from "path"
+import { createRequire } from "module"
+import { RequireFunction } from "."
 
 const getPkgType = (): string | undefined => {
   try {
     const pkg = JSON.parse(
-      fs.readFileSync(path.resolve('package.json'), 'utf-8'),
+      fs.readFileSync(path.resolve("package.json"), "utf-8"),
     )
     return pkg.type
   } catch (error) {}
 }
 
-export function guessFormat(inputFile: string): 'esm' | 'cjs' {
-  if (!usingDynamicImport) return 'cjs'
+export function guessFormat(inputFile: string): "esm" | "cjs" {
+  if (!usingDynamicImport) return "cjs"
 
   const ext = path.extname(inputFile)
   const type = getPkgType()
-  if (ext === '.js') {
-    return type === 'module' ? 'esm' : 'cjs'
-  } else if (ext === '.ts') {
-    return 'esm'
-  } else if (ext === '.mjs') {
-    return 'esm'
+  if (ext === ".js") {
+    return type === "module" ? "esm" : "cjs"
+  } else if (ext === ".ts") {
+    return "esm"
+  } else if (ext === ".mjs") {
+    return "esm"
   }
-  return 'cjs'
+  return "cjs"
 }
 
 declare const jest: any
 
 // Stolen from https://github.com/vitejs/vite/blob/0713446fa4df678422c84bd141b189a930c100e7/packages/vite/src/node/utils.ts#L606
-export const usingDynamicImport = typeof jest === 'undefined'
+export const usingDynamicImport = typeof jest === "undefined"
 /**
  * Dynamically import files.
  *
@@ -54,6 +44,9 @@ export const dynamicImport: RequireFunction = async (
   id: string,
   { format },
 ) => {
-  const fn = format === 'esm' ? (file: string) => import(file) : require
+  const fn =
+    format === "esm"
+      ? (file: string) => import(file)
+      : createRequire(import.meta.url)
   return fn(id)
 }
