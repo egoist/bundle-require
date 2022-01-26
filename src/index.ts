@@ -143,10 +143,10 @@ export const replaceDirnamePlugin = (): EsbuildPlugin => {
         const contents = await fs.promises.readFile(args.path, "utf-8")
         return {
           contents: contents
-            .replace(/\b__filename\b/g, JSON.stringify(args.path))
-            .replace(/\b__dirname\b/g, JSON.stringify(path.dirname(args.path)))
+            .replace(/[^"'\\]\b__filename\b[^"'\\]/g, JSON.stringify(args.path))
+            .replace(/[^"'\\]\b__dirname\b[^"'\\]/g, JSON.stringify(path.dirname(args.path)))
             .replace(
-              /\bimport\.meta\.url\b/g,
+              /[^"'\\]\bimport\.meta\.url\b[^"'\\]/g,
               JSON.stringify(`file://${args.path}`),
             ),
           loader: inferLoader(path.extname(args.path)),
