@@ -160,9 +160,8 @@ export async function bundleRequire(options: Options) {
   if (!JS_EXT_RE.test(options.filepath)) {
     throw new Error(`${options.filepath} is not a valid JS file`)
   }
-
-  const preserveTemporaryFile =
-    options.preserveTemporaryFile ?? !!process.env.BUNDLE_REQUIRE_PRESERVE
+  const temp = options.preserveTemporaryFile
+  const preserveTemporaryFile = temp !== null && temp !== void 0 ? temp : !!process.env.BUNDLE_REQUIRE_PRESERVE
   const cwd = options.cwd || process.cwd()
   const format = guessFormat(options.filepath)
   const tsconfig = loadTsConfig(options.cwd, options.tsconfig)
