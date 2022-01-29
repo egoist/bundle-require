@@ -10,9 +10,15 @@
   ],
   "type": "module",
   "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "default": "./dist/index.cjs"
+    }
+  },
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts-resolve --target node16",
+    "build": "tsup src/index.ts --format esm,cjs --dts-resolve --target node12.20.0",
     "test": "npm run build && vitest run",
     "prepublishOnly": "npm run build"
   },
@@ -31,5 +37,8 @@
   },
   "peerDependencies": {
     "esbuild": ">=0.13"
+  },
+  "engines": {
+    "node": "^12.20.0 || ^14.13.1 || >=16.0.0"
   }
 }
