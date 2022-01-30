@@ -143,11 +143,17 @@ export const replaceDirnamePlugin = (): EsbuildPlugin => {
         const contents = await fs.promises.readFile(args.path, "utf-8")
         return {
           contents: contents
-            .replace(/[^"'\\]\b__filename\b[^"'\\]/g, JSON.stringify(args.path))
-            .replace(/[^"'\\]\b__dirname\b[^"'\\]/g, JSON.stringify(path.dirname(args.path)))
+            .replace(
+              /[^"'\\]\b__filename\b[^"'\\]/g,
+              match => match.replace('__filename', JSON.stringify(args.path))
+            )
+            .replace(
+              /[^"'\\]\b__dirname\b[^"'\\]/g,
+              match => match.replace('__dirname', JSON.stringify(path.dirname(args.path)))
+            )
             .replace(
               /[^"'\\]\bimport\.meta\.url\b[^"'\\]/g,
-              JSON.stringify(`file://${args.path}`),
+              match => match.replace('import.meta.url', JSON.stringify(`file://${args.path}`)),
             ),
           loader: inferLoader(path.extname(args.path)),
         }
@@ -165,7 +171,7 @@ export async function bundleRequire(options: Options) {
     options.preserveTemporaryFile ?? !!process.env.BUNDLE_REQUIRE_PRESERVE
   const cwd = options.cwd || process.cwd()
   const format = guessFormat(options.filepath)
-  const tsconfig = loadTsConfig(options.cwd, options.tsconfig)
+  const tsconfig = loadTsConfig(cwd, options.tsconfig)
   const resolvePaths = tsconfigPathsToRegExp(
     tsconfig?.data.compilerOptions?.paths || {},
   )

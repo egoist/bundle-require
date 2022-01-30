@@ -46,3 +46,14 @@ test("resolve tsconfig paths", async () => {
   })
   assert.equal(mod.foo, "foo")
 })
+
+test("replace import.meta.url", async () => {
+  const dir = path.join(__dirname, "./fixture/replace-path")
+  const { mod } = await bundleRequire({
+    filepath: path.join(dir, "input.ts"),
+    cwd: dir,
+  })
+  assert.equal(mod.dir, dir)
+  assert.equal(mod.file, path.join(dir, "input.ts"))
+  assert.equal(mod.importMetaUrl, `file://${path.join(dir, "input.ts")}`)
+})
