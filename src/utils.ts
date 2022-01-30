@@ -47,8 +47,8 @@ export const dynamicImport: RequireFunction = async (
   const fn =
     format === "esm"
       ? (file: string) => import(file)
-      : typeof require === "function"
-      ? require
+      : typeof globalThis.require === "function"
+      ? globalThis.require
       : createRequire(import.meta.url)
   return fn(id)
 }
