@@ -30,7 +30,7 @@
     "prettier": "2.5.1",
     "tsup": "5.11.11",
     "typescript": "4.5.5",
-    "vitest": "0.2.5"
+    "vitest": "0.15.2"
   },
   "dependencies": {
     "load-tsconfig": "^0.2.0"
