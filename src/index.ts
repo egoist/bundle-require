@@ -171,7 +171,12 @@ export const replaceDirnamePlugin = (): EsbuildPlugin => {
   }
 }
 
-export async function bundleRequire(options: Options) {
+export async function bundleRequire<T = any>(
+  options: Options,
+): Promise<{
+  mod: T
+  dependencies: string[]
+}> {
   if (!JS_EXT_RE.test(options.filepath)) {
     throw new Error(`${options.filepath} is not a valid JS file`)
   }
