@@ -52,3 +52,7 @@ export const dynamicImport: RequireFunction = async (
       : createRequire(import.meta.url)
   return fn(id)
 }
+
+export const getRandomId = () => {
+  return Math.random().toString(36).substring(2, 15)
+}

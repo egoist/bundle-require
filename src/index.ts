@@ -10,7 +10,7 @@ import {
   Plugin as EsbuildPlugin,
 } from "esbuild"
 import { loadTsConfig } from "load-tsconfig"
-import { dynamicImport, guessFormat } from "./utils"
+import { dynamicImport, getRandomId, guessFormat } from "./utils"
 
 export const JS_EXT_RE = /\.(mjs|cjs|ts|js|tsx|jsx)$/
 
@@ -46,7 +46,7 @@ export interface Options {
   esbuildOptions?: BuildOptions
   /**
    * Get the path to the output file
-   * By default we simply replace the extension with `.bundled.js`
+   * By default we simply replace the extension with `.bundled_{randomId}.js`
    */
   getOutputFile?: GetOutputFile
   /**
@@ -75,7 +75,7 @@ export interface Options {
 const defaultGetOutputFile: GetOutputFile = (filepath, format) =>
   filepath.replace(
     JS_EXT_RE,
-    `.bundled_${Date.now()}.${format === "esm" ? "mjs" : "cjs"}`,
+    `.bundled_${getRandomId()}.${format === "esm" ? "mjs" : "cjs"}`,
   )
 
 export { loadTsConfig }
@@ -143,17 +143,20 @@ export const replaceDirnamePlugin = (): EsbuildPlugin => {
         const contents = await fs.promises.readFile(args.path, "utf-8")
         return {
           contents: contents
-            .replace(
-              /[^"'\\]\b__filename\b[^"'\\]/g,
-              match => match.replace('__filename', JSON.stringify(args.path))
+            .replace(/[^"'\\]\b__filename\b[^"'\\]/g, (match) =>
+              match.replace("__filename", JSON.stringify(args.path)),
             )
-            .replace(
-              /[^"'\\]\b__dirname\b[^"'\\]/g,
-              match => match.replace('__dirname', JSON.stringify(path.dirname(args.path)))
+            .replace(/[^"'\\]\b__dirname\b[^"'\\]/g, (match) =>
+              match.replace(
+                "__dirname",
+                JSON.stringify(path.dirname(args.path)),
+              ),
             )
-            .replace(
-              /[^"'\\]\bimport\.meta\.url\b[^"'\\]/g,
-              match => match.replace('import.meta.url', JSON.stringify(`file://${args.path}`)),
+            .replace(/[^"'\\]\bimport\.meta\.url\b[^"'\\]/g, (match) =>
+              match.replace(
+                "import.meta.url",
+                JSON.stringify(`file://${args.path}`),
+              ),
             ),
           loader: inferLoader(path.extname(args.path)),
         }
