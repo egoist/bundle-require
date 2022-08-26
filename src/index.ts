@@ -69,6 +69,12 @@ export interface Options {
    * Default to `process.env.BUNDLE_REQUIRE_PRESERVE`
    */
   preserveTemporaryFile?: boolean
+
+  /**
+   * Provide bundle format explicitly
+   * to skip the default format inference
+   */
+  format?: "cjs" | "esm"
 }
 
 // Use a random path to avoid import cache
@@ -173,7 +179,7 @@ export async function bundleRequire(options: Options) {
   const preserveTemporaryFile =
     options.preserveTemporaryFile ?? !!process.env.BUNDLE_REQUIRE_PRESERVE
   const cwd = options.cwd || process.cwd()
-  const format = guessFormat(options.filepath)
+  const format = options.format ?? guessFormat(options.filepath)
   const tsconfig = loadTsConfig(cwd, options.tsconfig)
   const resolvePaths = tsconfigPathsToRegExp(
     tsconfig?.data.compilerOptions?.paths || {},
