@@ -218,6 +218,7 @@ export async function bundleRequire<T = any>(
 
     return {
       mod,
+      text,
       dependencies: result.metafile ? Object.keys(result.metafile.inputs) : [],
     }
   }
