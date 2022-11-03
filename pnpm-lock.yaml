@@ -2,7 +2,7 @@ lockfileVersion: 5.4
 
 specifiers:
   '@egoist/prettier-config': 1.0.0
-  '@types/node': 16.11.21
+  '@types/node': 16.11.41
   esbuild: 0.13.15
   load-tsconfig: ^0.2.0
   prettier: 2.5.1
@@ -15,7 +15,7 @@ dependencies:
 
 devDependencies:
   '@egoist/prettier-config': 1.0.0
-  '@types/node': 16.11.21
+  '@types/node': 16.11.41
   esbuild: 0.13.15
   prettier: 2.5.1
   tsup: 5.11.11_typescript@4.5.5
@@ -59,8 +59,8 @@ packages:
     resolution: {integrity: sha512-/ceqdqeRraGolFTcfoXNiqjyQhZzbINDngeoAq9GoHa8PPK1yNzTaxWjA6BFWp5Ua9JpXEMSS4s5i9tS0hOJtw==}
     dev: true
 
-  /@types/node/16.11.21:
-    resolution: {integrity: sha512-Pf8M1XD9i1ksZEcCP8vuSNwooJ/bZapNmIzpmsMaL+jMI+8mEYU3PKvs+xDNuQcJWF/x24WzY4qxLtB0zNow9A==}
+  /@types/node/16.11.41:
+    resolution: {integrity: sha512-mqoYK2TnVjdkGk8qXAVGc/x9nSaTpSrFaGFm43BUH3IdoBV0nta6hYaGmdOvIMlbHJbUEVen3gvwpwovAZKNdQ==}
     dev: true
 
   /any-promise/1.3.0:
