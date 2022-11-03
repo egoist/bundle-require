@@ -12,6 +12,10 @@ import {
 import { loadTsConfig } from "load-tsconfig"
 import { dynamicImport, getRandomId, guessFormat } from "./utils"
 
+const DIRNAME_VAR_NAME = "__injected_dirname__"
+const FILENAME_VAR_NAME = "__injected_filename__"
+const IMPORT_META_URL_VAR_NAME = "__injected_import_meta_url__"
+
 export const JS_EXT_RE = /\.(mjs|cjs|ts|js|tsx|jsx)$/
 
 function inferLoader(ext: string): Loader {
@@ -141,29 +145,30 @@ export const externalPlugin = ({
   }
 }
 
-export const replaceDirnamePlugin = (): EsbuildPlugin => {
+export const injectFileScopePlugin = (): EsbuildPlugin => {
   return {
-    name: "bundle-require:replace-path",
+    name: "bundle-require:inject-file-scope",
     setup(ctx) {
+      ctx.initialOptions.define = {
+        ...ctx.initialOptions.define,
+        __dirname: DIRNAME_VAR_NAME,
+        __filename: FILENAME_VAR_NAME,
+        "import.meta.url": IMPORT_META_URL_VAR_NAME,
+      }
+
       ctx.onLoad({ filter: JS_EXT_RE }, async (args) => {
         const contents = await fs.promises.readFile(args.path, "utf-8")
+        const injectLines = [
+          `const ${FILENAME_VAR_NAME} = ${JSON.stringify(args.path)};`,
+          `const ${DIRNAME_VAR_NAME} = ${JSON.stringify(
+            path.dirname(args.path),
+          )};`,
+          `const ${IMPORT_META_URL_VAR_NAME} = ${JSON.stringify(
+            `file://${args.path}`,
+          )};`,
+        ]
         return {
-          contents: contents
-            .replace(/[^"'\\]\b__filename\b[^"'\\]/g, (match) =>
-              match.replace("__filename", JSON.stringify(args.path)),
-            )
-            .replace(/[^"'\\]\b__dirname\b[^"'\\]/g, (match) =>
-              match.replace(
-                "__dirname",
-                JSON.stringify(path.dirname(args.path)),
-              ),
-            )
-            .replace(/[^"'\\]\bimport\.meta\.url\b[^"'\\]/g, (match) =>
-              match.replace(
-                "import.meta.url",
-                JSON.stringify(`file://${args.path}`),
-              ),
-            ),
+          contents: injectLines.join("") + contents,
           loader: inferLoader(path.extname(args.path)),
         }
       })
@@ -251,7 +256,7 @@ export async function bundleRequire<T = any>(
         external: options.external,
         notExternal: resolvePaths,
       }),
-      replaceDirnamePlugin(),
+      injectFileScopePlugin(),
     ],
   })
 
