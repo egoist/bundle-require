@@ -164,7 +164,7 @@ export const injectFileScopePlugin = (): EsbuildPlugin => {
             path.dirname(args.path),
           )};`,
           `const ${IMPORT_META_URL_VAR_NAME} = ${JSON.stringify(
-            `file://${args.path}`,
+            pathToFileURL(args.path).href,
           )};`,
         ]
         return {
