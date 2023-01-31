@@ -36,7 +36,7 @@
     "load-tsconfig": "^0.2.3"
   },
   "peerDependencies": {
-    "esbuild": ">=0.13"
+    "esbuild": ">=0.17"
   },
   "engines": {
     "node": "^12.20.0 || ^14.13.1 || >=16.0.0"
