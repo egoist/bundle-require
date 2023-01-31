@@ -3,6 +3,7 @@ import path from "path"
 import { pathToFileURL } from "url"
 import {
   build,
+  context,
   Loader,
   BuildOptions,
   BuildFailure,
@@ -32,6 +33,8 @@ export type RequireFunction = (
 
 export type GetOutputFile = (filepath: string, format: "esm" | "cjs") => string
 
+export type RebuildCallback = (error: Pick<BuildFailure, 'errors' | 'warnings'> | null, result: BuildResult | null) => void
+
 export interface Options {
   cwd?: string
   /**
@@ -46,8 +49,14 @@ export interface Options {
   require?: RequireFunction
   /**
    * esbuild options
+   * 
+   * @deprecated `esbuildOptions.watch` is deprecated, use `onRebuild` instead
    */
-  esbuildOptions?: BuildOptions
+  esbuildOptions?: BuildOptions & {
+    watch?: boolean | {
+      onRebuild?: RebuildCallback
+    }
+  }
   /**
    * Get the path to the output file
    * By default we simply replace the extension with `.bundled_{randomId}.js`
@@ -57,7 +66,7 @@ export interface Options {
    * Enable watching and call the callback after each rebuild
    */
   onRebuild?: (ctx: {
-    err?: BuildFailure
+    err?: Pick<BuildFailure, 'errors' | 'warnings'>
     mod?: any
     dependencies?: string[]
   }) => void
@@ -176,89 +185,126 @@ export const injectFileScopePlugin = (): EsbuildPlugin => {
   }
 }
 
-export async function bundleRequire<T = any>(
+export function bundleRequire<T = any>(
   options: Options,
 ): Promise<{
   mod: T
   dependencies: string[]
 }> {
-  if (!JS_EXT_RE.test(options.filepath)) {
-    throw new Error(`${options.filepath} is not a valid JS file`)
-  }
-
-  const preserveTemporaryFile =
-    options.preserveTemporaryFile ?? !!process.env.BUNDLE_REQUIRE_PRESERVE
-  const cwd = options.cwd || process.cwd()
-  const format = options.format ?? guessFormat(options.filepath)
-  const tsconfig = loadTsConfig(cwd, options.tsconfig)
-  const resolvePaths = tsconfigPathsToRegExp(
-    tsconfig?.data.compilerOptions?.paths || {},
-  )
-
-  const extractResult = async (result: BuildResult) => {
-    if (!result.outputFiles) {
-      throw new Error(`[bundle-require] no output files`)
+  return new Promise((resolve, reject) => {
+    if (!JS_EXT_RE.test(options.filepath)) {
+      throw new Error(`${options.filepath} is not a valid JS file`)
     }
 
-    const { text } = result.outputFiles[0]
+    const preserveTemporaryFile =
+      options.preserveTemporaryFile ?? !!process.env.BUNDLE_REQUIRE_PRESERVE
+    const cwd = options.cwd || process.cwd()
+    const format = options.format ?? guessFormat(options.filepath)
+    const tsconfig = loadTsConfig(cwd, options.tsconfig)
+    const resolvePaths = tsconfigPathsToRegExp(
+      tsconfig?.data.compilerOptions?.paths || {},
+    )
 
-    const getOutputFile = options.getOutputFile || defaultGetOutputFile
-    const outfile = getOutputFile(options.filepath, format)
+    const extractResult = async (result: BuildResult) => {
+      if (!result.outputFiles) {
+        throw new Error(`[bundle-require] no output files`)
+      }
 
-    await fs.promises.writeFile(outfile, text, "utf8")
+      const { text } = result.outputFiles[0]
 
-    let mod: any
-    const req: RequireFunction = options.require || dynamicImport
-    try {
-      mod = await req(
-        format === "esm" ? pathToFileURL(outfile).href : outfile,
-        { format },
-      )
-    } finally {
-      if (!preserveTemporaryFile) {
-        // Remove the outfile after executed
-        await fs.promises.unlink(outfile)
+      const getOutputFile = options.getOutputFile || defaultGetOutputFile
+      const outfile = getOutputFile(options.filepath, format)
+
+      await fs.promises.writeFile(outfile, text, "utf8")
+
+      let mod: any
+      const req: RequireFunction = options.require || dynamicImport
+      try {
+        mod = await req(
+          format === "esm" ? pathToFileURL(outfile).href : outfile,
+          { format },
+        )
+      } finally {
+        if (!preserveTemporaryFile) {
+          // Remove the outfile after executed
+          await fs.promises.unlink(outfile)
+        }
+      }
+
+      return {
+        mod,
+        dependencies: result.metafile ? Object.keys(result.metafile.inputs) : [],
       }
     }
 
-    return {
-      mod,
-      dependencies: result.metafile ? Object.keys(result.metafile.inputs) : [],
+    const { watch: watchMode, ...restEsbuildOptions } = options.esbuildOptions || {}
+
+    const esbuildOptions: BuildOptions = {
+      ...restEsbuildOptions,
+      entryPoints: [options.filepath],
+      absWorkingDir: cwd,
+      outfile: "out.js",
+      format,
+      platform: "node",
+      sourcemap: "inline",
+      bundle: true,
+      metafile: true,
+      write: false,
+      plugins: [
+        ...(options.esbuildOptions?.plugins || []),
+        externalPlugin({
+          external: options.external,
+          notExternal: resolvePaths,
+        }),
+        injectFileScopePlugin()
+      ],
     }
-  }
 
-  const result = await build({
-    ...options.esbuildOptions,
-    entryPoints: [options.filepath],
-    absWorkingDir: cwd,
-    outfile: "out.js",
-    format,
-    platform: "node",
-    sourcemap: "inline",
-    bundle: true,
-    metafile: true,
-    write: false,
-    watch:
-      options.esbuildOptions?.watch ||
-      (options.onRebuild && {
-        async onRebuild(err, result) {
-          if (err) {
-            return options.onRebuild!({ err })
+    const run = async () => {
+      if (!(watchMode || options.onRebuild)) {
+        const result = await build(esbuildOptions)
+        resolve(await extractResult(result))
+      }
+      else {
+        const rebuildCallback: RebuildCallback =
+          typeof watchMode === 'object' && typeof watchMode.onRebuild === 'function'
+            ? watchMode.onRebuild : async (error, result) => {
+              if (error) {
+                options.onRebuild?.({ err: error })
+              }
+              if (result) {
+                options.onRebuild?.(await extractResult(result))
+              }
+            }
+
+        const onRebuildPlugin = (): EsbuildPlugin => {
+          return {
+            name: "bundle-require:on-rebuild",
+            setup(ctx) {
+              let count = 0
+              ctx.onEnd(async result => {
+                if (count++ === 0) {
+                  if (result.errors.length === 0) resolve(await extractResult(result))
+                }
+                else {
+                  if (result.errors.length > 0) {
+                    return rebuildCallback({ errors: result.errors, warnings: result.warnings }, null)
+                  }
+                  if (result) {
+                    rebuildCallback(null, result)
+                  }
+                }
+              })
+            },
           }
-          if (result) {
-            options.onRebuild!(await extractResult(result))
-          }
-        },
-      }),
-    plugins: [
-      ...(options.esbuildOptions?.plugins || []),
-      externalPlugin({
-        external: options.external,
-        notExternal: resolvePaths,
-      }),
-      injectFileScopePlugin(),
-    ],
+        }
+
+        esbuildOptions.plugins!.push(onRebuildPlugin())
+        const ctx = await context(esbuildOptions)
+        await ctx.watch()
+      }
+    }
+
+    run().catch(reject)
   })
-
-  return extractResult(result)
 }
