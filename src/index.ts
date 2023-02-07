@@ -33,7 +33,10 @@ export type RequireFunction = (
 
 export type GetOutputFile = (filepath: string, format: "esm" | "cjs") => string
 
-export type RebuildCallback = (error: Pick<BuildFailure, 'errors' | 'warnings'> | null, result: BuildResult | null) => void
+export type RebuildCallback = (
+  error: Pick<BuildFailure, "errors" | "warnings"> | null,
+  result: BuildResult | null,
+) => void
 
 export interface Options {
   cwd?: string
@@ -49,13 +52,15 @@ export interface Options {
   require?: RequireFunction
   /**
    * esbuild options
-   * 
+   *
    * @deprecated `esbuildOptions.watch` is deprecated, use `onRebuild` instead
    */
   esbuildOptions?: BuildOptions & {
-    watch?: boolean | {
-      onRebuild?: RebuildCallback
-    }
+    watch?:
+      | boolean
+      | {
+          onRebuild?: RebuildCallback
+        }
   }
   /**
    * Get the path to the output file
@@ -66,7 +71,7 @@ export interface Options {
    * Enable watching and call the callback after each rebuild
    */
   onRebuild?: (ctx: {
-    err?: Pick<BuildFailure, 'errors' | 'warnings'>
+    err?: Pick<BuildFailure, "errors" | "warnings">
     mod?: any
     dependencies?: string[]
   }) => void
@@ -233,13 +238,16 @@ export function bundleRequire<T = any>(
 
       return {
         mod,
-        dependencies: result.metafile ? Object.keys(result.metafile.inputs) : [],
+        dependencies: result.metafile
+          ? Object.keys(result.metafile.inputs)
+          : [],
       }
     }
 
-    const { watch: watchMode, ...restEsbuildOptions } = options.esbuildOptions || {}
+    const { watch: watchMode, ...restEsbuildOptions } =
+      options.esbuildOptions || {}
 
-    const esbuildOptions: BuildOptions = {
+    const esbuildOptions = {
       ...restEsbuildOptions,
       entryPoints: [options.filepath],
       absWorkingDir: cwd,
@@ -256,39 +264,43 @@ export function bundleRequire<T = any>(
           external: options.external,
           notExternal: resolvePaths,
         }),
-        injectFileScopePlugin()
+        injectFileScopePlugin(),
       ],
-    }
+    } satisfies BuildOptions
 
     const run = async () => {
       if (!(watchMode || options.onRebuild)) {
         const result = await build(esbuildOptions)
         resolve(await extractResult(result))
-      }
-      else {
+      } else {
         const rebuildCallback: RebuildCallback =
-          typeof watchMode === 'object' && typeof watchMode.onRebuild === 'function'
-            ? watchMode.onRebuild : async (error, result) => {
-              if (error) {
-                options.onRebuild?.({ err: error })
+          typeof watchMode === "object" &&
+          typeof watchMode.onRebuild === "function"
+            ? watchMode.onRebuild
+            : async (error, result) => {
+                if (error) {
+                  options.onRebuild?.({ err: error })
+                }
+                if (result) {
+                  options.onRebuild?.(await extractResult(result))
+                }
               }
-              if (result) {
-                options.onRebuild?.(await extractResult(result))
-              }
-            }
 
         const onRebuildPlugin = (): EsbuildPlugin => {
           return {
             name: "bundle-require:on-rebuild",
             setup(ctx) {
               let count = 0
-              ctx.onEnd(async result => {
+              ctx.onEnd(async (result) => {
                 if (count++ === 0) {
-                  if (result.errors.length === 0) resolve(await extractResult(result))
-                }
-                else {
+                  if (result.errors.length === 0)
+                    resolve(await extractResult(result))
+                } else {
                   if (result.errors.length > 0) {
-                    return rebuildCallback({ errors: result.errors, warnings: result.warnings }, null)
+                    return rebuildCallback(
+                      { errors: result.errors, warnings: result.warnings },
+                      null,
+                    )
                   }
                   if (result) {
                     rebuildCallback(null, result)
@@ -299,7 +311,7 @@ export function bundleRequire<T = any>(
           }
         }
 
-        esbuildOptions.plugins!.push(onRebuildPlugin())
+        esbuildOptions.plugins.push(onRebuildPlugin())
         const ctx = await context(esbuildOptions)
         await ctx.watch()
       }
