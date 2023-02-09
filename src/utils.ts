@@ -27,6 +27,9 @@ export function guessFormat(inputFile: string): "esm" | "cjs" {
   return "cjs"
 }
 
+// Injected by TSUP
+declare const TSUP_FORMAT: "esm" | "cjs"
+
 declare const jest: any
 
 // Stolen from https://github.com/vitejs/vite/blob/0713446fa4df678422c84bd141b189a930c100e7/packages/vite/src/node/utils.ts#L606
@@ -47,9 +50,9 @@ export const dynamicImport: RequireFunction = async (
   const fn =
     format === "esm"
       ? (file: string) => import(file)
-      : typeof globalThis.require === "function"
-      ? globalThis.require
-      : createRequire(import.meta.url)
+      : TSUP_FORMAT === "esm"
+      ? createRequire(import.meta.url)
+      : require
   return fn(id)
 }
 
