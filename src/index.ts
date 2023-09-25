@@ -17,10 +17,11 @@ const DIRNAME_VAR_NAME = "__injected_dirname__"
 const FILENAME_VAR_NAME = "__injected_filename__"
 const IMPORT_META_URL_VAR_NAME = "__injected_import_meta_url__"
 
-export const JS_EXT_RE = /\.(mjs|cjs|ts|js|tsx|jsx)$/
+export const JS_EXT_RE = /\.([mc]?[tj]s|[tj]sx)$/
 
 function inferLoader(ext: string): Loader {
   if (ext === ".mjs" || ext === ".cjs") return "js"
+  if (ext === ".mts" || ext === ".cts") return "ts"
   return ext.slice(1) as Loader
 }
 

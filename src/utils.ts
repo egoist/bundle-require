@@ -19,7 +19,7 @@ export function guessFormat(inputFile: string): "esm" | "cjs" {
   const type = getPkgType()
   if (ext === ".js") {
     return type === "module" ? "esm" : "cjs"
-  } else if (ext === ".ts") {
+  } else if (ext === ".ts" || ext === ".mts") {
     return "esm"
   } else if (ext === ".mjs") {
     return "esm"
