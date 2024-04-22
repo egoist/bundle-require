@@ -18,6 +18,7 @@ const FILENAME_VAR_NAME = "__injected_filename__"
 const IMPORT_META_URL_VAR_NAME = "__injected_import_meta_url__"
 
 export const JS_EXT_RE = /\.([mc]?[tj]s|[tj]sx)$/
+const PATH_NODE_MODULES_RE = /[\/\\]node_modules[\/\\]/
 
 function inferLoader(ext: string): Loader {
   if (ext === ".mjs" || ext === ".cjs") return "js"
@@ -135,11 +136,6 @@ export const externalPlugin = ({
     name: "bundle-require:external",
     setup(ctx) {
       ctx.onResolve({ filter: /.*/ }, async (args) => {
-        if (args.path[0] === "." || path.isAbsolute(args.path)) {
-          // Fallback to default
-          return
-        }
-
         if (match(args.path, external)) {
           return {
             external: true,
@@ -148,6 +144,21 @@ export const externalPlugin = ({
 
         if (match(args.path, notExternal)) {
           // Should be resolved by esbuild
+          return
+        }
+
+        if (args.path.match(PATH_NODE_MODULES_RE)) {
+          const resolved = args.path[0] === "."
+            ? path.resolve(args.resolveDir, args.path)
+            : args.path
+          return {
+            path: resolved,
+            external: true,
+          }
+        }
+        
+        if (args.path[0] === "." || path.isAbsolute(args.path)) {
+          // Fallback to default
           return
         }
 
