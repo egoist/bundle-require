@@ -81,6 +81,15 @@ export interface Options {
   /** External packages */
   external?: (string | RegExp)[]
 
+  /** Not external packages */
+  notExternal?: (string | RegExp)[]
+
+  /**
+   * Automatically mark node_modules as external
+   * @default true - `false` when `filepath` is in node_modules
+   */
+  externalNodeModules?: boolean
+
   /** A custom tsconfig path to read `paths` option */
   tsconfig?: string
 
@@ -128,9 +137,11 @@ export const match = (id: string, patterns?: (string | RegExp)[]) => {
 export const externalPlugin = ({
   external,
   notExternal,
+  externalNodeModules = true,
 }: {
   external?: (string | RegExp)[]
   notExternal?: (string | RegExp)[]
+  externalNodeModules?: boolean
 } = {}): EsbuildPlugin => {
   return {
     name: "bundle-require:external",
@@ -147,7 +158,7 @@ export const externalPlugin = ({
           return
         }
 
-        if (args.path.match(PATH_NODE_MODULES_RE)) {
+        if (externalNodeModules && args.path.match(PATH_NODE_MODULES_RE)) {
           const resolved = args.path[0] === "."
             ? path.resolve(args.resolveDir, args.path)
             : args.path
@@ -274,7 +285,12 @@ export function bundleRequire<T = any>(
         ...(options.esbuildOptions?.plugins || []),
         externalPlugin({
           external: options.external,
-          notExternal: resolvePaths,
+          notExternal: [
+            ...(options.notExternal || []),
+            ...resolvePaths
+          ],
+          // When `filepath` is in node_modules, this is default to false
+          externalNodeModules: options.externalNodeModules ?? !options.filepath.match(PATH_NODE_MODULES_RE),
         }),
         injectFileScopePlugin(),
       ],
