@@ -86,7 +86,7 @@ export interface Options {
 
   /**
    * Automatically mark node_modules as external
-   * @default true
+   * @default true - `false` when `filepath` is in node_modules
    */
   externalNodeModules?: boolean
 
@@ -289,7 +289,8 @@ export function bundleRequire<T = any>(
             ...(options.notExternal || []),
             ...resolvePaths
           ],
-          externalNodeModules: options.externalNodeModules,
+          // When `filepath` is in node_modules, this is default to false
+          externalNodeModules: options.externalNodeModules ?? !options.filepath.match(PATH_NODE_MODULES_RE),
         }),
         injectFileScopePlugin(),
       ],
