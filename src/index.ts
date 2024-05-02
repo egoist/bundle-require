@@ -152,7 +152,7 @@ export const externalPlugin = ({
             ? path.resolve(args.resolveDir, args.path)
             : args.path
           return {
-            path: resolved,
+            path: pathToFileURL(resolved).toString(),
             external: true,
           }
         }
