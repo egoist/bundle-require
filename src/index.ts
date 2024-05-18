@@ -238,7 +238,7 @@ export function bundleRequire<T = any>(
       ? undefined
       : typeof options.tsconfig === "string" || !options.tsconfig
         ? loadTsConfig(cwd, options.tsconfig)
-        : { data: options.tsconfig }
+        : { data: options.tsconfig, path: undefined }
 
     const resolvePaths = tsconfigPathsToRegExp(
       tsconfig?.data.compilerOptions?.paths || {},
