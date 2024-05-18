@@ -9,6 +9,7 @@ import {
   BuildFailure,
   BuildResult,
   Plugin as EsbuildPlugin,
+  TsconfigRaw,
 } from "esbuild"
 import { loadTsConfig } from "load-tsconfig"
 import { dynamicImport, getRandomId, guessFormat } from "./utils"
@@ -90,8 +91,13 @@ export interface Options {
    */
   externalNodeModules?: boolean
 
-  /** A custom tsconfig path to read `paths` option */
-  tsconfig?: string
+  /**
+   * A custom tsconfig path to read `paths` option
+   *
+   * Set to `false` to disable tsconfig
+   * Or provide a `TsconfigRaw` object
+  */
+  tsconfig?: string | TsconfigRaw | false
 
   /**
    * Preserve compiled temporary file for debugging
@@ -228,7 +234,12 @@ export function bundleRequire<T = any>(
       options.preserveTemporaryFile ?? !!process.env.BUNDLE_REQUIRE_PRESERVE
     const cwd = options.cwd || process.cwd()
     const format = options.format ?? guessFormat(options.filepath)
-    const tsconfig = loadTsConfig(cwd, options.tsconfig)
+    const tsconfig = options.tsconfig === false 
+      ? undefined
+      : typeof options.tsconfig === "string" || !options.tsconfig
+        ? loadTsConfig(cwd, options.tsconfig)
+        : { data: options.tsconfig }
+
     const resolvePaths = tsconfigPathsToRegExp(
       tsconfig?.data.compilerOptions?.paths || {},
     )
@@ -281,6 +292,9 @@ export function bundleRequire<T = any>(
       bundle: true,
       metafile: true,
       write: false,
+      ...(tsconfig?.path)
+        ? { tsconfig: tsconfig.path }
+        : { tsconfigRaw: tsconfig?.data || {} },
       plugins: [
         ...(options.esbuildOptions?.plugins || []),
         externalPlugin({
