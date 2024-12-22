@@ -41,6 +41,10 @@ export type RebuildCallback = (
   result: BuildResult | null,
 ) => void
 
+export type ReadFile = (filepath: string) => string
+
+const defaultReadFile = (filepath: string) => fs.readFileSync(filepath, "utf-8")
+
 export interface Options {
   cwd?: string
   /**
@@ -56,9 +60,11 @@ export interface Options {
   /**
    * esbuild options
    *
-   * @deprecated `esbuildOptions.watch` is deprecated, use `onRebuild` instead
    */
   esbuildOptions?: BuildOptions & {
+    /**
+     * @deprecated `esbuildOptions.watch` is deprecated, use `onRebuild` instead
+     */
     watch?:
       | boolean
       | {
@@ -96,7 +102,7 @@ export interface Options {
    *
    * Set to `false` to disable tsconfig
    * Or provide a `TsconfigRaw` object
-  */
+   */
   tsconfig?: string | TsconfigRaw | false
 
   /**
@@ -110,6 +116,8 @@ export interface Options {
    * to skip the default format inference
    */
   format?: "cjs" | "esm"
+
+  readFile?: ReadFile
 }
 
 // Use a random path to avoid import cache
@@ -165,15 +173,16 @@ export const externalPlugin = ({
         }
 
         if (externalNodeModules && args.path.match(PATH_NODE_MODULES_RE)) {
-          const resolved = args.path[0] === "."
-            ? path.resolve(args.resolveDir, args.path)
-            : args.path
+          const resolved =
+            args.path[0] === "."
+              ? path.resolve(args.resolveDir, args.path)
+              : args.path
           return {
             path: pathToFileURL(resolved).toString(),
             external: true,
           }
         }
-        
+
         if (args.path[0] === "." || path.isAbsolute(args.path)) {
           // Fallback to default
           return
@@ -188,7 +197,9 @@ export const externalPlugin = ({
   }
 }
 
-export const injectFileScopePlugin = (): EsbuildPlugin => {
+export const injectFileScopePlugin = ({
+  readFile = defaultReadFile,
+}: { readFile?: ReadFile } = {}): EsbuildPlugin => {
   return {
     name: "bundle-require:inject-file-scope",
     setup(ctx) {
@@ -199,8 +210,8 @@ export const injectFileScopePlugin = (): EsbuildPlugin => {
         "import.meta.url": IMPORT_META_URL_VAR_NAME,
       }
 
-      ctx.onLoad({ filter: JS_EXT_RE }, async (args) => {
-        const contents = await fs.promises.readFile(args.path, "utf-8")
+      ctx.onLoad({ filter: JS_EXT_RE }, (args) => {
+        const contents = readFile(args.path)
         const injectLines = [
           `const ${FILENAME_VAR_NAME} = ${JSON.stringify(args.path)};`,
           `const ${DIRNAME_VAR_NAME} = ${JSON.stringify(
@@ -234,9 +245,10 @@ export function bundleRequire<T = any>(
       options.preserveTemporaryFile ?? !!process.env.BUNDLE_REQUIRE_PRESERVE
     const cwd = options.cwd || process.cwd()
     const format = options.format ?? guessFormat(options.filepath)
-    const tsconfig = options.tsconfig === false 
-      ? undefined
-      : typeof options.tsconfig === "string" || !options.tsconfig
+    const tsconfig =
+      options.tsconfig === false
+        ? undefined
+        : typeof options.tsconfig === "string" || !options.tsconfig
         ? loadTsConfig(cwd, options.tsconfig)
         : { data: options.tsconfig, path: undefined }
 
@@ -292,21 +304,22 @@ export function bundleRequire<T = any>(
       bundle: true,
       metafile: true,
       write: false,
-      ...(tsconfig?.path)
+      ...(tsconfig?.path
         ? { tsconfig: tsconfig.path }
-        : { tsconfigRaw: tsconfig?.data || {} },
+        : { tsconfigRaw: tsconfig?.data || {} }),
       plugins: [
         ...(options.esbuildOptions?.plugins || []),
         externalPlugin({
           external: options.external,
-          notExternal: [
-            ...(options.notExternal || []),
-            ...resolvePaths
-          ],
+          notExternal: [...(options.notExternal || []), ...resolvePaths],
           // When `filepath` is in node_modules, this is default to false
-          externalNodeModules: options.externalNodeModules ?? !options.filepath.match(PATH_NODE_MODULES_RE),
+          externalNodeModules:
+            options.externalNodeModules ??
+            !options.filepath.match(PATH_NODE_MODULES_RE),
         }),
-        injectFileScopePlugin(),
+        injectFileScopePlugin({
+          readFile: options.readFile,
+        }),
       ],
     } satisfies BuildOptions
 

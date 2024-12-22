@@ -57,3 +57,27 @@ test("replace import.meta.url", async () => {
   assert.equal(mod.file, path.join(dir, "input.ts"))
   assert.equal(mod.importMetaUrl, `file://${path.join(dir, "input.ts")}`)
 })
+
+test("custom readFile", async () => {
+  const { mod } = await bundleRequire({
+    filepath: "/tmp/foo.ts",
+    esbuildOptions: {
+      plugins: [
+        {
+          name: "resolve",
+          setup(build) {
+            build.onResolve({ filter: /.*/ }, (args) => {
+              return {
+                path: args.path,
+              }
+            })
+          },
+        },
+      ],
+    },
+    readFile: (filepath) => {
+      return `export default "${filepath}"`
+    },
+  })
+  assert.equal(mod.default, "/tmp/foo.ts")
+})
